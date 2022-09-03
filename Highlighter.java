@@ -10,40 +10,60 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 
+
 public class Highlighter
  {   
     
     //Code Refactored From https://mkyong.com/java/how-to-modify-xml-file-in-java-dom-parser/
     public static void main(String[] args) {
 
-    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
-    try (InputStream is = new FileInputStream("com.dropbox.android.xml")) {
+    File directoryPath = new File("Programming-Assignment-Data");
 
-        DocumentBuilder db = dbf.newDocumentBuilder();
+    File fileList[] = directoryPath.listFiles();
 
-        Document doc = db.parse(is);
 
-        //Get Nodes In Document
-        NodeList listOfNodes = doc.getElementsByTagName("node");
+    for(File fileToModify : fileList){
 
-        //Go Through Each Node and Change Value of Selected from F to T
-        for (int i = 0; i < listOfNodes.getLength(); i++) {
-            Node node = listOfNodes.item(i);
-            if (node.getNodeType() == Node.ELEMENT_NODE) {
-                Node selected_state = node.getAttributes().getNamedItem("selected");
-                if ("false".equals(selected_state.getTextContent())) {
-                        selected_state.setTextContent("true");
-                }   
-            }
+        String fileName = fileToModify.getName();
+
+        System.out.print(fileName);
+
+        if(fileName.contains("png")){
+            continue;
         }
-        FileOutputStream output = new FileOutputStream("modified.xml");
-        writeXml(doc, output);
-    }catch(Exception e){
-        e.printStackTrace();
+
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+
+        try (InputStream is = new FileInputStream("Programming-Assignment-Data\\" + fileName)) {
+
+            DocumentBuilder db = dbf.newDocumentBuilder();
+
+            Document doc = db.parse(is);
+
+            //Get Nodes In Document
+            NodeList listOfNodes = doc.getElementsByTagName("node");
+
+            //Go Through Each Node and Change Value of Selected from False to True
+            for (int i = 0; i < listOfNodes.getLength(); i++) {
+                Node node = listOfNodes.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    Node selected_state = node.getAttributes().getNamedItem("selected");
+                    if ("false".equals(selected_state.getTextContent())) {
+                            selected_state.setTextContent("true");
+                    }   
+                }
+            }
+            FileOutputStream output = new FileOutputStream(fileName);
+            writeXml(doc, output);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
     }
 }
 
+
+//Code For Writing XML to OutputStream : https://mkyong.com/java/how-to-modify-xml-file-in-java-dom-parser/
 private static void writeXml(Document doc,  OutputStream output)    throws TransformerException, UnsupportedEncodingException {
 
     TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -51,7 +71,6 @@ private static void writeXml(Document doc,  OutputStream output)    throws Trans
 
     Transformer transformer = transformerFactory.newTransformer();
 
-    // pretty print
     transformer.setOutputProperty(OutputKeys.INDENT, "yes");
     transformer.setOutputProperty(OutputKeys.STANDALONE, "no");
 
@@ -59,6 +78,8 @@ private static void writeXml(Document doc,  OutputStream output)    throws Trans
     StreamResult result = new StreamResult(output);
 
     transformer.transform(source, result);
+
+
 
     }
 }
