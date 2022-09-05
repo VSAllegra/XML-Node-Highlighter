@@ -2,12 +2,12 @@ import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.awt.Graphics2D;
+import java.awt.Color;
+
 import java.io.*;
 
 
@@ -20,18 +20,20 @@ public class Highlighter
 
     File directoryPath = new File("Programming-Assignment-Data");
 
-    File fileList[] = directoryPath.listFiles();
+    File[] fileList = directoryPath.listFiles();
 
 
-    for(File fileToModify : fileList){
+    for(int i = 0; i < fileList.length; i+= 2){
 
-        String fileName = fileToModify.getName();
+        File fileXML = fileList[i+1];
+        
+        File imageToModify = fileList[i];
 
-        System.out.print(fileName);
+        String fileName = fileXML.getName();
 
-        if(fileName.contains("png")){
-            continue;
-        }
+        String imageName = imageToModify.getName();
+
+        System.out.print("FILENAME: " + fileName + "\n");
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
@@ -44,44 +46,48 @@ public class Highlighter
             //Get Nodes In Document
             NodeList listOfNodes = doc.getElementsByTagName("node");
 
+            BufferedImage imgToHighlight = ImageIO.read(imageToModify);
+            Graphics2D g = imgToHighlight.createGraphics();
+            g.setPaint(new Color(251,247,25));
+
             //Go Through Each Node and Change Value of Selected from False to True
-            for (int i = 0; i < listOfNodes.getLength(); i++) {
-                Node node = listOfNodes.item(i);
+            for (int j = 0; j < listOfNodes.getLength(); j++) {
+                Node node = listOfNodes.item(j);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
-                    Node selected_state = node.getAttributes().getNamedItem("selected");
-                    if ("false".equals(selected_state.getTextContent())) {
-                            selected_state.setTextContent("true");
-                    }   
+                    Node selected_state = node.getAttributes().getNamedItem("bounds");
+                    int[] CordinateInt = coordinate_to_int(selected_state);
+                    imageHighlight(CordinateInt, g);
+                    ImageIO.write(imgToHighlight, "PNG", new File("modified"+imageName));
                 }
             }
-            FileOutputStream output = new FileOutputStream(fileName);
-            writeXml(doc, output);
         }catch(Exception e){
             e.printStackTrace();
         }
     }
 }
 
+private static int[] coordinate_to_int(Node Coordinate){
+    String[] Coordinates = Coordinate.getTextContent().split("\\[", 3);
+    String XCord[] = Coordinates[1].replace("]", "").split(",");
+    String YCord[] = Coordinates[2].replace("]", "").split(",");
+    int[] Cord_to_ret = new int[4];
+    Cord_to_ret[0] = Integer.parseInt(XCord[0]);
+    Cord_to_ret[1] = Integer.parseInt(XCord[1]);
+    Cord_to_ret[2] = Integer.parseInt(YCord[0]);
+    Cord_to_ret[3] = Integer.parseInt(YCord[1]);
 
-//Code For Writing XML to OutputStream : https://mkyong.com/java/how-to-modify-xml-file-in-java-dom-parser/
-private static void writeXml(Document doc,  OutputStream output)    throws TransformerException, UnsupportedEncodingException {
+    return Cord_to_ret;
+ }
 
-    TransformerFactory transformerFactory = TransformerFactory.newInstance();
-
-
-    Transformer transformer = transformerFactory.newTransformer();
-
-    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-    transformer.setOutputProperty(OutputKeys.STANDALONE, "no");
-
-    DOMSource source = new DOMSource(doc);
-    StreamResult result = new StreamResult(output);
-
-    transformer.transform(source, result);
-
-
-
+ private static void imageHighlight(int[] Coordinate, Graphics2D g){
+    try{
+        g.fillRect(Coordinate[0], Coordinate[2], Coordinate[1] - Coordinate[0], Coordinate[3] - Coordinate[2]);
+    }catch(Exception e){
+        e.printStackTrace();
     }
+
+ }
+
 }
 
 
